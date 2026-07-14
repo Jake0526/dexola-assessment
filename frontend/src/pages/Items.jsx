@@ -6,18 +6,19 @@ import { FixedSizeList } from 'react-window';
 const PAGE_SIZE = 100;
 const ROW_HEIGHT = 32;
 const LIST_HEIGHT = 480;
+const SKELETON_ROWS = 8;
 
 function Row({ index, style, data }) {
   const item = data[index];
   return (
     <div style={style}>
-      <Link to={'/items/' + item.id}>{item.name}</Link>
+      <Link to={'/items/' + item.id} className="item-row">{item.name}</Link>
     </div>
   );
 }
 
 function Items() {
-  const { items, page, totalPages, fetchItems } = useData();
+  const { items, total, page, totalPages, fetchItems } = useData();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,19 +54,32 @@ function Items() {
   }, [fetchItems, debouncedSearch, currentPage]);
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="page">
+      <label htmlFor="item-search" className="visually-hidden">Search items</label>
       <input
+        id="item-search"
         type="text"
         placeholder="Search items..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ padding: 8, width: '100%', maxWidth: 320, marginBottom: 16 }}
+        className="search-input"
       />
 
+      {/* Announced to screen readers whenever the result count changes */}
+      <p className="status-text" role="status" aria-live="polite">
+        {loading ? 'Searching…' : `${total} item${total === 1 ? '' : 's'} found`}
+      </p>
+
       {loading ? (
-        <p>Loading...</p>
+        <div aria-hidden="true">
+          {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+            <div className="skeleton-row" key={i}>
+              <div className="skeleton-bar" style={{ animationDelay: `${i * 0.05}s` }} />
+            </div>
+          ))}
+        </div>
       ) : items.length === 0 ? (
-        <p>No items found.</p>
+        <p className="empty-state">No items found.</p>
       ) : (
         <FixedSizeList
           height={LIST_HEIGHT}
@@ -78,15 +92,15 @@ function Items() {
         </FixedSizeList>
       )}
 
-      <div style={{ marginTop: 16 }}>
+      <nav className="pagination" aria-label="Pagination">
         <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={page <= 1}>
           Prev
         </button>
-        <span style={{ margin: '0 12px' }}>Page {page} of {totalPages}</span>
+        <span className="pagination__status">Page {page} of {totalPages}</span>
         <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
           Next
         </button>
-      </div>
+      </nav>
     </div>
   );
 }
