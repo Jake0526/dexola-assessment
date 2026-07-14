@@ -14,7 +14,7 @@ function readData() {
 router.get('/', (req, res, next) => {
   try {
     const data = readData();
-    const { limit, q } = req.query;
+    const { q } = req.query;
     let results = data;
 
     if (q) {
@@ -22,11 +22,19 @@ router.get('/', (req, res, next) => {
       results = results.filter(item => item.name.toLowerCase().includes(q.toLowerCase()));
     }
 
-    if (limit) {
-      results = results.slice(0, parseInt(limit));
-    }
+    const total = results.length;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.max(1, parseInt(req.query.pageSize, 10) || 10);
+    const start = (page - 1) * pageSize;
+    const paginated = results.slice(start, start + pageSize);
 
-    res.json(results);
+    res.json({
+      items: paginated,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
   } catch (err) {
     next(err);
   }
