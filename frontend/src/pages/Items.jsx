@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useData } from '../state/DataContext';
 import { Link } from 'react-router-dom';
+import { FixedSizeList } from 'react-window';
+
+const PAGE_SIZE = 100;
+const ROW_HEIGHT = 32;
+const LIST_HEIGHT = 480;
+
+function Row({ index, style, data }) {
+  const item = data[index];
+  return (
+    <div style={style}>
+      <Link to={'/items/' + item.id}>{item.name}</Link>
+    </div>
+  );
+}
 
 function Items() {
   const { items, page, totalPages, fetchItems } = useData();
@@ -24,7 +38,7 @@ function Items() {
     const controller = new AbortController();
     setLoading(true);
 
-    fetchItems({ q: debouncedSearch, page: currentPage, pageSize: 10 }, controller.signal)
+    fetchItems({ q: debouncedSearch, page: currentPage, pageSize: PAGE_SIZE }, controller.signal)
       .catch(err => {
         if (err.name !== 'AbortError') console.error(err);
       })
@@ -53,13 +67,15 @@ function Items() {
       ) : items.length === 0 ? (
         <p>No items found.</p>
       ) : (
-        <ul>
-          {items.map(item => (
-            <li key={item.id}>
-              <Link to={'/items/' + item.id}>{item.name}</Link>
-            </li>
-          ))}
-        </ul>
+        <FixedSizeList
+          height={LIST_HEIGHT}
+          width="100%"
+          itemCount={items.length}
+          itemSize={ROW_HEIGHT}
+          itemData={items}
+        >
+          {Row}
+        </FixedSizeList>
       )}
 
       <div style={{ marginTop: 16 }}>
